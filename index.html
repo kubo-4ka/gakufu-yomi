@@ -1,0 +1,334 @@
+<!doctype html>
+<html lang="ja">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+  <title>楽譜よみ練習帳</title>
+  <meta name="description" content="ト音記号・ヘ音記号の音を、一覧・五線譜クイズ・聴き取りクイズ・鍵盤で毎日練習できる楽譜よみの練習帳。">
+  <meta name="theme-color" content="#fbf8f1" media="(prefers-color-scheme: light)">
+  <meta name="theme-color" content="#14171c" media="(prefers-color-scheme: dark)">
+  <link rel="icon" href="favicon.svg" type="image/svg+xml">
+  <link rel="manifest" href="manifest.webmanifest">
+  <link rel="apple-touch-icon" sizes="180x180" href="icons/apple-touch-icon.png">
+  <meta name="apple-mobile-web-app-capable" content="yes">
+  <meta name="mobile-web-app-capable" content="yes">
+  <meta name="apple-mobile-web-app-status-bar-style" content="default">
+  <meta name="apple-mobile-web-app-title" content="楽譜よみ">
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Cormorant+Garamond:ital,wght@0,500;0,600;1,500&family=Shippori+Mincho:wght@500;600&family=Zen+Kaku+Gothic+New:wght@400;500;700&display=swap" rel="stylesheet">
+  <!-- ト音記号・ヘ音記号の字形（必要な文字だけ読み込む） -->
+  <link href="https://fonts.googleapis.com/css2?family=Noto+Music&text=%F0%9D%84%9E%F0%9D%84%A2&display=block" rel="stylesheet">
+  <link rel="stylesheet" href="style.css">
+  <script>
+    // Apply the saved theme before paint to avoid a flash
+    try { var t = localStorage.getItem('gy.theme'); if (t === 'light' || t === 'dark') document.documentElement.dataset.theme = t; } catch (e) {}
+  </script>
+</head>
+<body>
+  <div class="page">
+    <header class="masthead">
+      <div class="brand">
+        <span class="brand-mark" aria-hidden="true">
+          <svg viewBox="0 0 24 24"><ellipse cx="9" cy="17" rx="3.6" ry="2.6" transform="rotate(-22 9 17)"/><path d="M12.2 16.2V4.5c2.6.6 5 2.2 5.6 5"/></svg>
+        </span>
+        <div>
+          <h1>楽譜よみ練習帳</h1>
+          <p class="brand-sub">Note Reading &middot; Workbook</p>
+        </div>
+      </div>
+      <button class="icon-btn" id="themeBtn" type="button" aria-label="テーマを切り替え" title="テーマを切り替え">
+        <svg class="i-sun" viewBox="0 0 24 24" aria-hidden="true"><circle cx="12" cy="12" r="4.2"/><path d="M12 2.5v2.2M12 19.3v2.2M4.6 4.6l1.6 1.6M17.8 17.8l1.6 1.6M2.5 12h2.2M19.3 12h2.2M4.6 19.4l1.6-1.6M17.8 6.2l1.6-1.6"/></svg>
+        <svg class="i-moon" viewBox="0 0 24 24" aria-hidden="true"><path d="M20 14.5A8 8 0 0 1 9.5 4a8 8 0 1 0 10.5 10.5z"/></svg>
+      </button>
+    </header>
+
+    <main>
+      <!-- ===== Quiz ===== -->
+      <section class="view" id="view-quiz" aria-label="クイズ">
+        <div id="quizSetup" class="stack">
+          <div class="today" id="todayBox"></div>
+          <div id="stepBox"></div>
+          <div class="modes" id="modeList"></div>
+
+          <details class="settings" id="settingsBox">
+            <summary><span>出題の設定</span><span class="summary-line" id="settingsSummary"></span></summary>
+            <div class="settings-body">
+              <div class="field">
+                <span class="field-label">記号</span>
+                <div class="seg" id="clefSeg" role="radiogroup" aria-label="記号"></div>
+                <p class="hint" id="clefHint"></p>
+              </div>
+              <div class="field-row">
+                <label class="field">
+                  <span class="field-label">出題する音</span>
+                  <select id="optFilter"></select>
+                </label>
+                <div class="field">
+                  <span class="field-label">1問で読む音の数</span>
+                  <div class="seg" id="notesSeg" role="radiogroup" aria-label="1問で読む音の数"></div>
+                </div>
+              </div>
+              <div class="field-row">
+                <label class="field">
+                  <span class="field-label">音域</span>
+                  <select id="optLevel"></select>
+                </label>
+                <label class="field">
+                  <span class="field-label">問題数</span>
+                  <select id="optCount">
+                    <option value="5">5問</option>
+                    <option value="10">10問</option>
+                    <option value="20">20問</option>
+                    <option value="30">30問</option>
+                    <option value="50">50問</option>
+                  </select>
+                </label>
+              </div>
+              <p class="hint pool-hint" id="poolHint"></p>
+              <div class="field">
+                <span class="field-label">音名の表記</span>
+                <div class="seg" id="sysSeg" role="radiogroup" aria-label="音名の表記"></div>
+              </div>
+              <label class="check"><input type="checkbox" id="optAcc"> ♯・♭の付いた音も出す</label>
+              <label class="check"><input type="checkbox" id="optWeak" checked> 間違えた音を多めに出す</label>
+              <label class="check"><input type="checkbox" id="optAuto"> 正解したら自動で次の問題へ</label>
+              <label class="check"><input type="checkbox" id="optSound" checked> 答えたら、その音を鳴らす</label>
+
+              <div class="field">
+                <span class="field-label">聴き取りクイズ</span>
+                <label class="check"><input type="checkbox" id="optRef"> 先に基準の「ド」を鳴らす</label>
+                <div class="field-row">
+                  <label class="field">
+                    <span class="field-label">五線譜の選択肢</span>
+                    <select id="optEar">
+                      <option value="far">離れた音から選ぶ（やさしい）</option>
+                      <option value="near">近い音から選ぶ（むずかしい）</option>
+                    </select>
+                  </label>
+                </div>
+              </div>
+
+              <div class="field-row">
+                <label class="field">
+                  <span class="field-label">音色</span>
+                  <select id="optTone"></select>
+                </label>
+                <label class="field">
+                  <span class="field-label">音の長さ（持続音のとき）</span>
+                  <select id="optDur">
+                    <option value="0.5">短め（0.5秒）</option>
+                    <option value="1">ふつう（1秒）</option>
+                    <option value="1.8">長め（1.8秒）</option>
+                    <option value="3">とても長め（3秒）</option>
+                  </select>
+                </label>
+              </div>
+              <div class="field-row">
+                <label class="field">
+                  <span class="field-label">音量</span>
+                  <select id="optVolume">
+                    <option value="0.3">小さめ</option>
+                    <option value="0.55">ふつう</option>
+                    <option value="0.8">大きめ</option>
+                    <option value="1">最大</option>
+                  </select>
+                </label>
+                <label class="field">
+                  <span class="field-label">鍵盤の音名</span>
+                  <select id="optKeyLabels">
+                    <option value="c">ドだけ表示</option>
+                    <option value="all">すべて表示</option>
+                    <option value="none">表示しない</option>
+                  </select>
+                </label>
+                <label class="field">
+                  <span class="field-label">1日の目標</span>
+                  <select id="optGoal">
+                    <option value="10">10問</option>
+                    <option value="20">20問</option>
+                    <option value="30">30問</option>
+                    <option value="50">50問</option>
+                    <option value="100">100問</option>
+                  </select>
+                </label>
+              </div>
+              <p class="hint">iPhone はマナーモード（消音）のとき音が出ないことがあります。音が出ないときは消音スイッチを確認してください。</p>
+            </div>
+          </details>
+        </div>
+
+        <div id="quizPlay" class="quiz" hidden>
+          <div class="quiz-top">
+            <button class="text-btn" id="quitBtn" type="button">&larr; やめる</button>
+            <span class="progress-label" id="progressLabel">1 / 10</span>
+            <span class="score-label" id="scoreLabel">0 正解</span>
+          </div>
+          <div class="progress" aria-hidden="true"><span id="progressBar"></span></div>
+
+          <p class="prompt" id="prompt"></p>
+          <div class="stage" id="stage"></div>
+          <p class="gloss" id="gloss" aria-live="polite"></p>
+
+          <div class="choices" id="choices"></div>
+          <div class="next-row">
+            <button class="btn ghost" id="replayBtn" type="button" hidden>もう一度聴く</button>
+            <button class="btn" id="nextBtn" type="button" hidden>次へ</button>
+          </div>
+          <p class="kbd-hint" id="kbdHint"></p>
+        </div>
+
+        <div id="quizResult" class="result" hidden>
+          <p class="result-kicker">Result</p>
+          <p class="result-score"><span id="resultScore">0</span><small id="resultTotal"> / 10</small></p>
+          <p class="result-title" id="resultTitle"></p>
+          <div class="result-actions">
+            <button class="btn" id="againBtn" type="button">もう一度</button>
+            <button class="btn ghost" id="retryMissBtn" type="button" hidden>間違えた音だけ</button>
+            <button class="btn ghost" id="backBtn" type="button">形式を選ぶ</button>
+          </div>
+          <div class="review" id="review"></div>
+        </div>
+      </section>
+
+      <!-- ===== List ===== -->
+      <section class="view" id="view-list" aria-label="音の一覧">
+        <div class="toolbar">
+          <div class="seg" id="listClefSeg" role="radiogroup" aria-label="記号"></div>
+          <div class="toolbar-checks">
+            <label class="check small"><input type="checkbox" id="listHide"> 音名を隠す</label>
+            <label class="check small"><input type="checkbox" id="listAcc"> ♯・♭も表示</label>
+          </div>
+        </div>
+        <div id="listLand"></div>
+        <div id="listMnemo"></div>
+        <h2 class="sub-head">音の一覧 <small id="listRange"></small></h2>
+        <p class="hint">カードをタップすると音が鳴ります。下の線はクイズの正答率です。</p>
+        <div id="listGrid"></div>
+        <h2 class="sub-head">音名の対応表</h2>
+        <div class="table-wrap"><table class="name-table" id="nameTable"></table></div>
+      </section>
+
+      <!-- ===== Piano ===== -->
+      <section class="view" id="view-piano" aria-label="鍵盤">
+        <div class="pv-stage">
+          <div class="pv-staff" id="pvStaff"></div>
+          <div class="pv-info" id="pvInfo"></div>
+        </div>
+        <div class="toolbar">
+          <div class="seg" id="pvAccSeg" role="radiogroup" aria-label="黒鍵の表記"></div>
+          <label class="check small">音色
+            <select id="pvTone" class="small-select"></select>
+          </label>
+          <label class="check small">鍵盤の音名
+            <select id="pvLabels" class="small-select">
+              <option value="c">ドだけ</option>
+              <option value="all">すべて</option>
+              <option value="none">なし</option>
+            </select>
+          </label>
+        </div>
+        <div class="piano-scroll" id="pvScroll"><div id="pvPiano"></div></div>
+        <p class="hint">鍵盤を押すと、その音が大譜表（ト音記号とヘ音記号）のどこに書かれるかを表示します。真ん中のド（ド4）より下はヘ音記号、上はト音記号に書いています。横にスクロールできます。オルガン・シンセなどの持続音は、鍵盤を押している間のびます。</p>
+      </section>
+
+      <!-- ===== Record ===== -->
+      <section class="view" id="view-record" aria-label="記録">
+        <div class="tiles" id="recTiles"></div>
+        <h2 class="sub-head">この2週間</h2>
+        <div class="bars" id="recBars"></div>
+        <h2 class="sub-head">苦手な音</h2>
+        <div id="recWeak"></div>
+        <h2 class="sub-head">音ごとの正答率</h2>
+        <div class="toolbar"><div class="seg" id="recClefSeg" role="radiogroup" aria-label="記号"></div></div>
+        <div class="heat" id="recHeat"></div>
+        <h2 class="sub-head">60秒スピード読みの自己ベスト</h2>
+        <div id="recBest"></div>
+        <button class="btn ghost small" id="resetStats" type="button">記録をすべて消す</button>
+      </section>
+
+      <!-- ===== About ===== -->
+      <section class="view prose" id="view-about" aria-label="このアプリについて">
+        <h2>このアプリについて</h2>
+        <p>ト音記号・ヘ音記号の五線譜を、ぱっと読めるようになるための練習帳です。音の位置を覚えるところから始めて、クイズで毎日少しずつ読む回数を重ねることで、楽譜を見てすぐに音がわかる力を身につけることを目指しています。</p>
+
+        <h3>練習のしかた</h3>
+        <dl class="defs">
+          <dt>五線譜を読む</dt><dd>五線譜に書かれた音符を見て、音名をボタンで答えます。いちばん基本の練習です。</dd>
+          <dt>鍵盤で答える</dt><dd>五線譜の音符を見て、鍵盤の正しい場所を押します。同じ「ド」でもオクターブの違いまで区別するので、ピアノを弾くときの読み方に近い練習です。</dd>
+          <dt>五線譜から探す</dt><dd>「ト音記号のソ」のような音名を見て、その音が書かれた五線譜を4つから選びます。</dd>
+          <dt>聴いて五線譜を選ぶ</dt><dd>鳴った音を聴いて、その音の五線譜を4つから選びます。高い・低いを聴き分けて、楽譜の上下と結びつける練習です。</dd>
+          <dt>聴いて音名を答える</dt><dd>鳴った音の名前を答えます。はじめは設定の「先に基準のドを鳴らす」をオンにして、ドからの距離で考えるのがおすすめです。</dd>
+          <dt>60秒スピード読み</dt><dd>60秒で何問読めるかに挑戦します。記号・音域・♯♭の設定ごとに自己ベストが残るので、毎日の記録として使えます。</dd>
+        </dl>
+        <h3>はじめての人へ（ステップ）</h3>
+        <p>クイズの画面の「ステップ」を押すと、出題の設定がまとめて切り替わります。まずはト音記号の<b>ドミソ</b>（真ん中のド・ミ・ソ）から始めて、<b>線の上の音</b>（ミ・ソ・シ・レ・ファ）、<b>線の間の音</b>（ファ・ラ・ド・ミ）、五線の中ぜんぶ、2つ続けて…と少しずつ範囲を広げ、ヘ音記号、大譜表、♯・♭へと進んでいきます。各ステップで8〜9割読めるようになったら次へ進むのがおすすめです。</p>
+        <p>「出題の設定」では、ステップを使わずに個別に選ぶこともできます。<b>出題する音</b>（すべて／線の上の音だけ／線の間の音だけ／ドミソだけ）と、<b>1問で読む音の数</b>（1つ・2つ・3つ）を組み合わせられます。2つ・3つのときは、左から順に答えます。続けて読むことで、1音ずつではなく音の並びとして楽譜を読む練習になります。</p>
+        <p>間違えた音は記録され、「間違えた音を多めに出す」がオンのときは次から多めに出題されます。結果画面の「間違えた音だけ」で、すぐにもう一度練習できます。</p>
+        <p>クイズ中はキーボードでも答えられます。音名ボタンは <kbd>1</kbd>〜<kbd>7</kbd>（または <kbd>C</kbd> <kbd>D</kbd> <kbd>E</kbd> <kbd>F</kbd> <kbd>G</kbd> <kbd>A</kbd> <kbd>B</kbd>）、4択は <kbd>1</kbd>〜<kbd>4</kbd>、<kbd>Enter</kbd> で次へ、<kbd>Space</kbd> でもう一度聴く、<kbd>Esc</kbd> でやめる、です。</p>
+
+        <h3>読み方のコツ</h3>
+        <dl class="defs">
+          <dt>ト音記号</dt><dd>「ト」はドイツ・英米式の G、ドレミの<b>ソ</b>のこと。ト音記号は、書き始めの渦巻きが巻きつく<b>第2線がソ</b>であることを表す記号です。</dd>
+          <dt>ヘ音記号</dt><dd>「ヘ」は F、ドレミの<b>ファ</b>のこと。ヘ音記号は、書き始めの黒い丸と2つの点にはさまれた<b>第4線がファ</b>であることを表す記号です。</dd>
+          <dt>真ん中のド</dt><dd>ト音記号では下に加線を1本、ヘ音記号では上に加線を1本引いたドが、同じ高さの「真ん中のド」（C4）です。ピアノの真ん中あたりのドにあたります。</dd>
+          <dt>線と間</dt><dd>五線は下から第1線〜第5線、線と線のあいだは下から第1間〜第4間と呼びます。線→すぐ上の間→すぐ上の線…と、1つずつ上がるごとに音が1つずつ上がります（ド→レ→ミ…）。</dd>
+          <dt>線どうし・間どうし</dt><dd>線から1つ上の線、間から1つ上の間は、音が1つ飛ばし（ド→ミ→ソ…）になります。「線だけ」「間だけ」の並びを覚えておくと、目印の音から速くたどれます。</dd>
+          <dt>加線</dt><dd>五線からはみ出す音は、短い線（加線）を足して書きます。加線は2本・3本と増えるほど読みにくくなるので、まずは真ん中のドなど、加線1本の音から慣れていきましょう。</dd>
+        </dl>
+        <p>「一覧」タブでは、ト音記号・ヘ音記号の音を加線3本まで並べ、目印の音と、線・間の音の並びをまとめています。</p>
+
+        <h3>音名の表記</h3>
+        <p>音名は、ドレミ（イタリア式）・CDE（英米式）・ハニホ（日本式）・ドイツ式から選べます。ドイツ式ではシを H、シ♭を B と呼び、♯は「-is」（Fis＝ファ♯）、♭は「-es」（Des＝レ♭、例外として Es＝ミ♭・As＝ラ♭）を付けます。吹奏楽やオーケストラでよく使われる呼び方です。</p>
+        <p>オクターブは、真ん中のドを <b>C4</b> とする表記（国際式）で、日本式の呼び方（一点ハ＝C4、小字ハ＝C3 など）も一覧に添えています。</p>
+
+        <h3>音について</h3>
+        <p>音はお使いのブラウザの中で合成しています（Web Audio API）。音色は、ピアノ・純音（サイン波）・オルガン・シンセ・ストリングス・オルゴールから選べます。オルガン・シンセ・ストリングス・純音は鳴っている間ずっと同じ大きさで続く「持続音」で、音の高さを聴き取りやすく、長さも設定できます。最初にどこかをタップするまでは、ブラウザの決まりで音が鳴りません。iPhone はマナーモード（消音スイッチがオン）のとき、音が出ないことがあります。</p>
+
+        <h3>アプリとして使う</h3>
+        <p>ホーム画面に追加すると、アプリのように全画面で使えます。<strong>https:// で公開されたページから追加した場合は</strong>、一度開いたあとオフラインでも動きます。</p>
+        <ul class="sources">
+          <li>iPhone（Safari）：共有ボタン →「ホーム画面に追加」</li>
+          <li>Android（Chrome）：メニュー →「アプリをインストール」または「ホーム画面に追加」</li>
+        </ul>
+        <button class="btn small" id="installBtn" type="button" hidden>アプリとしてインストール</button>
+
+        <h3>データの保存</h3>
+        <p>正答率・練習した日の記録・設定は、お使いのブラウザの中だけに保存されます。外部へ送信されることはありません。「記録」タブから消すことができます。</p>
+
+        <h3>クレジット</h3>
+        <ul class="sources">
+          <li>ト音記号・ヘ音記号の字形：Noto Music（Google Fonts, SIL Open Font License）</li>
+          <li>フォント：Shippori Mincho／Zen Kaku Gothic New／Cormorant Garamond（Google Fonts, SIL Open Font License）</li>
+        </ul>
+      </section>
+    </main>
+  </div>
+
+  <nav class="bottom-nav" aria-label="メニュー">
+    <button class="nav-item" data-view="quiz" type="button">
+      <svg viewBox="0 0 24 24" aria-hidden="true"><circle cx="12" cy="12" r="8.5"/><path d="M9.6 9.6a2.5 2.5 0 1 1 3.4 2.3c-.7.3-1 .8-1 1.5v.4M12 16.6v.2"/></svg>
+      <span>クイズ</span>
+    </button>
+    <button class="nav-item" data-view="list" type="button">
+      <svg viewBox="0 0 24 24" aria-hidden="true"><path d="M3 6h18M3 10h18M3 14h18M3 18h18"/><ellipse cx="9" cy="12" rx="2.4" ry="1.8" transform="rotate(-22 9 12)" class="fill"/><ellipse cx="15.5" cy="8" rx="2.4" ry="1.8" transform="rotate(-22 15.5 8)" class="fill"/></svg>
+      <span>一覧</span>
+    </button>
+    <button class="nav-item" data-view="piano" type="button">
+      <svg viewBox="0 0 24 24" aria-hidden="true"><rect x="3.5" y="5" width="17" height="14" rx="1.5"/><path d="M8.2 19V5M12 19V5M15.8 19V5"/><path class="fill" d="M7 5h2.4v7H7zM14.6 5H17v7h-2.4z"/></svg>
+      <span>鍵盤</span>
+    </button>
+    <button class="nav-item" data-view="record" type="button">
+      <svg viewBox="0 0 24 24" aria-hidden="true"><path d="M4.5 19.5h15M7 16.5v-5M12 16.5V7M17 16.5v-8"/></svg>
+      <span>記録</span>
+    </button>
+    <button class="nav-item" data-view="about" type="button">
+      <svg viewBox="0 0 24 24" aria-hidden="true"><circle cx="12" cy="12" r="8.5"/><path d="M12 11v5.5M12 7.6v.2"/></svg>
+      <span>説明</span>
+    </button>
+  </nav>
+
+  <script src="music.js"></script>
+  <script src="app.js"></script>
+</body>
+</html>
